@@ -1539,6 +1539,7 @@ dependencies = [
 name = "gix-blame"
 version = "0.0.0"
 dependencies = [
+ "gix-commitgraph 0.26.0",
  "gix-diff",
  "gix-filter",
  "gix-fs 0.13.0",
@@ -1547,10 +1548,12 @@ dependencies = [
  "gix-object 0.47.0",
  "gix-odb",
  "gix-ref 0.50.0",
+ "gix-revwalk 0.18.0",
  "gix-testtools",
  "gix-trace 0.1.12",
  "gix-traverse 0.44.0",
  "gix-worktree 0.39.0",
+ "smallvec",
  "thiserror 2.0.3",
 ]
 

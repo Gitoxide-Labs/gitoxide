@@ -110,7 +110,7 @@ mod baseline {
 struct Fixture {
     odb: gix_odb::Handle,
     resource_cache: gix_diff::blob::Platform,
-    commits: Vec<Result<gix_traverse::commit::Info, gix_traverse::commit::topo::Error>>,
+    suspect: ObjectId,
 }
 
 impl Fixture {
@@ -136,10 +136,6 @@ impl Fixture {
         use gix_ref::file::ReferenceExt;
 
         let head_id = reference.peel_to_id_in_place(&store, &odb)?;
-
-        let commits: Vec<_> = gix_traverse::commit::topo::Builder::from_iters(&odb, [head_id], None::<Vec<ObjectId>>)
-            .build()?
-            .collect();
 
         let git_dir = worktree_path.join(".git");
         let index = gix_index::File::at(git_dir.join("index"), gix_hash::Kind::Sha1, false, Default::default())?;
@@ -174,7 +170,7 @@ impl Fixture {
         Ok(Fixture {
             odb,
             resource_cache,
-            commits,
+            suspect: head_id,
         })
     }
 }
@@ -186,12 +182,13 @@ macro_rules! mktest {
             let Fixture {
                 odb,
                 mut resource_cache,
-                commits,
+                suspect,
             } = Fixture::new()?;
 
             let lines_blamed = gix_blame::file(
                 &odb,
-                commits,
+                suspect,
+                None,
                 &mut resource_cache,
                 format!("{}.txt", $case).as_str().into(),
                 None,
@@ -247,12 +244,13 @@ fn diff_disparity() {
         let Fixture {
             odb,
             mut resource_cache,
-            commits,
+            suspect,
         } = Fixture::new().unwrap();
 
         let lines_blamed = gix_blame::file(
             &odb,
-            commits,
+            suspect,
+            None,
             &mut resource_cache,
             format!("{case}.txt").as_str().into(),
             None,
@@ -274,12 +272,19 @@ fn line_range() {
     let Fixture {
         odb,
         mut resource_cache,
-        commits,
+        suspect,
     } = Fixture::new().unwrap();
 
-    let lines_blamed = gix_blame::file(&odb, commits, &mut resource_cache, "simple.txt".into(), Some(1..2))
-        .unwrap()
-        .entries;
+    let lines_blamed = gix_blame::file(
+        &odb,
+        suspect,
+        None,
+        &mut resource_cache,
+        "simple.txt".into(),
+        Some(1..2),
+    )
+    .unwrap()
+    .entries;
 
     assert_eq!(lines_blamed.len(), 2);
 

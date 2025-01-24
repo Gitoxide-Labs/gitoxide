@@ -67,12 +67,18 @@ pub struct Info {
     pub commit_time: Option<gix_date::SecondsSinceUnixEpoch>,
 }
 
-enum Either<'buf, 'cache> {
+/// Information about a commit that can be obtained either from a [`gix_object::CommitRefIter`] or
+/// a [`gix_commitgraph::file::Commit`].
+pub enum Either<'buf, 'cache> {
+    /// See [`gix_object::CommitRefIter`].
     CommitRefIter(gix_object::CommitRefIter<'buf>),
+    /// See [`gix_commitgraph::file::Commit`].
     CachedCommit(gix_commitgraph::file::Commit<'cache>),
 }
 
-fn find<'cache, 'buf, Find>(
+/// Find information about a commit by either getting it from a [`gix_commitgraph::Graph`], if
+/// present, or a [`gix_object::CommitRefIter`] otherwise.
+pub fn find<'cache, 'buf, Find>(
     cache: Option<&'cache gix_commitgraph::Graph>,
     objects: Find,
     id: &gix_hash::oid,

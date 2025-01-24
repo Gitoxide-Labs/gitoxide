@@ -35,13 +35,17 @@ pub fn blame_file(
         .next()
         .expect("exactly one pattern");
 
-    let suspect = repo.head()?.peel_to_commit_in_place()?;
-    let traverse =
-        gix::traverse::commit::topo::Builder::from_iters(&repo.objects, [suspect.id], None::<Vec<gix::ObjectId>>)
-            .with_commit_graph(repo.commit_graph_if_enabled()?)
-            .build()?;
+    let suspect: gix::ObjectId = repo.head()?.into_peeled_id()?.into();
+    let cache: Option<gix::commitgraph::Graph> = repo.commit_graph_if_enabled()?;
     let mut resource_cache = repo.diff_resource_cache_for_tree_diff()?;
-    let outcome = gix::blame::file(&repo.objects, traverse, &mut resource_cache, file.as_bstr(), range)?;
+    let outcome = gix::blame::file(
+        &repo.objects,
+        suspect,
+        cache,
+        &mut resource_cache,
+        file.as_bstr(),
+        range,
+    )?;
     let statistics = outcome.statistics;
     write_blame_entries(out, outcome)?;
 
