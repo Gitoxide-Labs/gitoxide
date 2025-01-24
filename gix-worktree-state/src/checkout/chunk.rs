@@ -177,7 +177,6 @@ where
     // We process each key and do as the filter process tells us, while collecting data about the overall progress.
     let keys: BTreeSet<_> = delayed_filter_results.iter().map(|d| d.key.clone()).collect();
     let mut unknown_paths = Vec::new();
-    let mut rela_path_as_path = Default::default();
     for key in keys {
         loop {
             let rela_paths = ctx.filters.driver_state_mut().list_delayed_paths(&key)?;
@@ -229,10 +228,7 @@ where
                 entry::finalize_entry(
                     delayed.entry,
                     write.inner.into_inner().map_err(std::io::IntoInnerError::into_error)?,
-                    set_executable_after_creation.then(|| {
-                        rela_path_as_path = gix_path::from_bstr(delayed.entry_path);
-                        rela_path_as_path.as_ref()
-                    }),
+                    set_executable_after_creation,
                 )?;
                 delayed_files += 1;
                 files.fetch_add(1, Ordering::Relaxed);

@@ -2928,6 +2928,7 @@ dependencies = [
  "gix-path 0.10.14",
  "gix-worktree 0.39.0",
  "io-close",
+ "rustix",
  "thiserror 2.0.3",
 ]
 
