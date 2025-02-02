@@ -73,8 +73,16 @@ pub fn file(
 
     let mut stats = Statistics::default();
     let (mut buf, mut buf2, mut buf3) = (Vec::new(), Vec::new(), Vec::new());
-    let blamed_file_entry_id = find_path_entry_in_commit(&odb, &suspect, file_path, &mut buf, &mut buf2, &mut stats)?
-        .ok_or_else(|| Error::FileMissing {
+    let blamed_file_entry_id = find_path_entry_in_commit(
+        &odb,
+        &suspect,
+        file_path,
+        cache.as_ref(),
+        &mut buf,
+        &mut buf2,
+        &mut stats,
+    )?
+    .ok_or_else(|| Error::FileMissing {
         file_path: file_path.to_owned(),
         commit_id: suspect,
     })?;
@@ -135,7 +143,15 @@ pub fn file(
             .filter(|(id, _)| *id == suspect)
             .map(|(_, entry)| entry);
         if entry.is_none() {
-            entry = find_path_entry_in_commit(&odb, &suspect, file_path, &mut buf, &mut buf2, &mut stats)?;
+            entry = find_path_entry_in_commit(
+                &odb,
+                &suspect,
+                file_path,
+                cache.as_ref(),
+                &mut buf,
+                &mut buf2,
+                &mut stats,
+            )?;
         }
 
         let Some(entry_id) = entry else {
@@ -177,9 +193,15 @@ pub fn file(
         }
 
         for (pid, (parent_id, parent_commit_time)) in parent_ids.iter().enumerate() {
-            if let Some(parent_entry_id) =
-                find_path_entry_in_commit(&odb, parent_id, file_path, &mut buf, &mut buf2, &mut stats)?
-            {
+            if let Some(parent_entry_id) = find_path_entry_in_commit(
+                &odb,
+                parent_id,
+                file_path,
+                cache.as_ref(),
+                &mut buf,
+                &mut buf2,
+                &mut stats,
+            )? {
                 let no_change_in_entry = entry_id == parent_entry_id;
                 if pid == 0 {
                     previous_entry = Some((*parent_id, parent_entry_id));
@@ -200,6 +222,7 @@ pub fn file(
                 file_path,
                 suspect,
                 parent_id,
+                cache.as_ref(),
                 &mut stats,
                 &mut diff_state,
                 &mut buf,
@@ -401,20 +424,19 @@ fn tree_diff_at_file_path(
     file_path: &BStr,
     id: ObjectId,
     parent_id: ObjectId,
+    cache: Option<&gix_commitgraph::Graph>,
     stats: &mut Statistics,
     state: &mut gix_diff::tree::State,
     commit_buf: &mut Vec<u8>,
     lhs_tree_buf: &mut Vec<u8>,
     rhs_tree_buf: &mut Vec<u8>,
 ) -> Result<Option<gix_diff::tree::recorder::Change>, Error> {
-    let parent_tree = odb.find_commit(&parent_id, commit_buf)?.tree();
-    stats.commits_to_tree += 1;
+    let parent_tree_id = tree_id(find_commit(cache, &odb, &parent_id, commit_buf)?)?;
 
-    let parent_tree_iter = odb.find_tree_iter(&parent_tree, lhs_tree_buf)?;
+    let parent_tree_iter = odb.find_tree_iter(&parent_tree_id, lhs_tree_buf)?;
     stats.trees_decoded += 1;
 
-    let tree_id = odb.find_commit(&id, commit_buf)?.tree();
-    stats.commits_to_tree += 1;
+    let tree_id = tree_id(find_commit(cache, &odb, &id, commit_buf)?)?;
 
     let tree_iter = odb.find_tree_iter(&tree_id, rhs_tree_buf)?;
     stats.trees_decoded += 1;
@@ -605,13 +627,13 @@ fn find_path_entry_in_commit(
     odb: &impl gix_object::Find,
     commit: &gix_hash::oid,
     file_path: &BStr,
+    cache: Option<&gix_commitgraph::Graph>,
     buf: &mut Vec<u8>,
     buf2: &mut Vec<u8>,
     stats: &mut Statistics,
 ) -> Result<Option<ObjectId>, Error> {
-    let commit_id = odb.find_commit(commit, buf)?.tree();
-    stats.commits_to_tree += 1;
-    let tree_iter = odb.find_tree_iter(&commit_id, buf)?;
+    let tree_id = tree_id(find_commit(cache, odb, commit, buf)?)?;
+    let tree_iter = odb.find_tree_iter(&tree_id, buf)?;
     stats.trees_decoded += 1;
 
     let res = tree_iter.lookup_entry(
@@ -664,6 +686,13 @@ fn collect_parents(
         }
     };
     Ok(parent_ids)
+}
+
+fn tree_id(commit: gix_traverse::commit::Either<'_, '_>) -> Result<ObjectId, Error> {
+    match commit {
+        gix_traverse::commit::Either::CommitRefIter(mut commit_ref_iter) => Ok(commit_ref_iter.tree_id()?),
+        gix_traverse::commit::Either::CachedCommit(commit) => Ok(commit.root_tree_id().into()),
+    }
 }
 
 /// Return an iterator over tokens for use in diffing. These are usually lines, but it's important
