@@ -4,6 +4,7 @@ use gix_object::{bstr::ByteSlice, Kind, TagRef, TagRefIter};
 use crate::fixture_name;
 
 mod method {
+    use bstr::ByteSlice;
     use gix_object::TagRef;
     use pretty_assertions::assert_eq;
 
@@ -15,6 +16,21 @@ mod method {
         let tag = TagRef::from_bytes(&fixture)?;
         assert_eq!(tag.target(), hex_to_id("ffa700b4aca13b80cb6b98a078e7c96804f8e0ec"));
         assert_eq!(tag.target, "ffa700b4aca13b80cb6b98a078e7c96804f8e0ec".as_bytes());
+
+        let gix_object::Tag {
+            target,
+            target_kind,
+            name,
+            tagger,
+            message,
+            pgp_signature,
+        } = tag.into_owned();
+        assert_eq!(target.to_string(), tag.target);
+        assert_eq!(target_kind, tag.target_kind);
+        assert_eq!(name, tag.name);
+        assert_eq!(tagger.as_ref().map(|s| s.to_ref()), tag.tagger);
+        assert_eq!(message, tag.message);
+        assert_eq!(pgp_signature.as_ref().map(|s| s.as_bstr()), tag.pgp_signature);
         Ok(())
     }
 }

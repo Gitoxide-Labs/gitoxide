@@ -58,7 +58,7 @@ pub enum Kind {
     Commit,
     Tag,
 }
-/// A chunk of any [`data`][BlobRef::data].
+/// A chunk of any [`data`](BlobRef::data).
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlobRef<'a> {
@@ -66,7 +66,7 @@ pub struct BlobRef<'a> {
     pub data: &'a [u8],
 }
 
-/// A mutable chunk of any [`data`][Blob::data].
+/// A mutable chunk of any [`data`](Blob::data).
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Blob {
@@ -74,7 +74,7 @@ pub struct Blob {
     pub data: Vec<u8>,
 }
 
-/// A git commit parsed using [`from_bytes()`][CommitRef::from_bytes()].
+/// A git commit parsed using [`from_bytes()`](CommitRef::from_bytes()).
 ///
 /// A commit encapsulates information about a point in time at which the state of the repository is recorded, usually after a
 /// change which is documented in the commit `message`.
@@ -83,18 +83,18 @@ pub struct Blob {
 pub struct CommitRef<'a> {
     /// HEX hash of tree object we point to. Usually 40 bytes long.
     ///
-    /// Use [`tree()`][CommitRef::tree()] to obtain a decoded version of it.
+    /// Use [`tree()`](CommitRef::tree()) to obtain a decoded version of it.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub tree: &'a BStr,
     /// HEX hash of each parent commit. Empty for first commit in repository.
     pub parents: SmallVec<[&'a BStr; 1]>,
     /// Who wrote this commit. Name and email might contain whitespace and are not trimmed to ensure round-tripping.
     ///
-    /// Use the [`author()`][CommitRef::author()] method to received a trimmed version of it.
+    /// Use the [`author()`](CommitRef::author()) method to received a trimmed version of it.
     pub author: gix_actor::SignatureRef<'a>,
     /// Who committed this commit. Name and email might contain whitespace and are not trimmed to ensure round-tripping.
     ///
-    /// Use the [`committer()`][CommitRef::committer()] method to received a trimmed version of it.
+    /// Use the [`committer()`](CommitRef::committer()) method to received a trimmed version of it.
     ///
     /// This may be different from the `author` in case the author couldn't write to the repository themselves and
     /// is commonly encountered with contributed commits.
@@ -103,7 +103,7 @@ pub struct CommitRef<'a> {
     pub encoding: Option<&'a BStr>,
     /// The commit message documenting the change.
     pub message: &'a BStr,
-    /// Extra header fields, in order of them being encountered, made accessible with the iterator returned by [`extra_headers()`][CommitRef::extra_headers()].
+    /// Extra header fields, in order of them being encountered, made accessible with the iterator returned by [`extra_headers()`](CommitRef::extra_headers()).
     pub extra_headers: Vec<(&'a BStr, Cow<'a, BStr>)>,
 }
 
@@ -135,15 +135,15 @@ pub struct Commit {
     /// The commit message documenting the change.
     pub message: BString,
     /// Extra header fields, in order of them being encountered, made accessible with the iterator returned
-    /// by [`extra_headers()`][Commit::extra_headers()].
+    /// by [`extra_headers()`](Commit::extra_headers()).
     pub extra_headers: Vec<(BString, BString)>,
 }
 
 /// Represents a git tag, commonly indicating a software release.
-#[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone)]
+#[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TagRef<'a> {
-    /// The hash in hexadecimal being the object this tag points to. Use [`target()`][TagRef::target()] to obtain a byte representation.
+    /// The hash in hexadecimal being the object this tag points to. Use [`target()`](TagRef::target()) to obtain a byte representation.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub target: &'a BStr,
     /// The kind of object that `target` points to.
@@ -184,13 +184,13 @@ pub struct Tag {
     pub pgp_signature: Option<BString>,
 }
 
-/// Immutable objects are read-only structures referencing most data from [a byte slice][crate::ObjectRef::from_bytes()].
+/// Immutable objects are read-only structures referencing most data from [a byte slice](ObjectRef::from_bytes()).
 ///
 /// Immutable objects are expected to be deserialized from bytes that acts as backing store, and they
-/// cannot be mutated or serialized. Instead, one will [convert][crate::ObjectRef::into_owned()] them into their [`mutable`][Object] counterparts
+/// cannot be mutated or serialized. Instead, one will [convert](ObjectRef::into_owned()) them into their [`mutable`](Object) counterparts
 /// which support mutation and serialization.
 ///
-/// An `ObjectRef` is representing [`Trees`][TreeRef], [`Blobs`][BlobRef], [`Commits`][CommitRef], or [`Tags`][TagRef].
+/// An `ObjectRef` is representing [`Trees`](TreeRef), [`Blobs`](BlobRef), [`Commits`](CommitRef), or [`Tags`](TagRef).
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[allow(missing_docs)]
@@ -206,10 +206,10 @@ pub enum ObjectRef<'a> {
 ///
 /// Mutable objects are Commits, Trees, Blobs and Tags that can be changed and serialized.
 ///
-/// They either created using object [construction][Object] or by [deserializing existing objects][ObjectRef::from_bytes()]
-/// and converting these [into mutable copies][ObjectRef::into_owned()] for adjustments.
+/// They either created using object [construction](Object) or by [deserializing existing objects](ObjectRef::from_bytes())
+/// and converting these [into mutable copies](ObjectRef::into_owned()) for adjustments.
 ///
-/// An `Object` is representing [`Trees`][Tree], [`Blobs`][Blob], [`Commits`][Commit] or [`Tags`][Tag].
+/// An `Object` is representing [`Trees`](Tree), [`Blobs`](Blob), [`Commits`](Commit), or [`Tags`](Tag).
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[allow(clippy::large_enum_variant, missing_docs)]

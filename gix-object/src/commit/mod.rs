@@ -5,6 +5,9 @@ use winnow::prelude::*;
 
 use crate::{Commit, CommitRef, TagRef};
 
+/// The well-known field name for gpg signatures.
+pub const SIGNATURE_FIELD_NAME: &str = "gpgsig";
+
 mod decode;
 ///
 pub mod message;
@@ -84,7 +87,7 @@ impl<'a> CommitRef<'a> {
     }
 
     /// Returns a convenient iterator over all extra headers.
-    pub fn extra_headers(&self) -> crate::commit::ExtraHeaders<impl Iterator<Item = (&BStr, &BStr)>> {
+    pub fn extra_headers(&self) -> ExtraHeaders<impl Iterator<Item = (&BStr, &BStr)>> {
         ExtraHeaders::new(self.extra_headers.iter().map(|(k, v)| (*k, v.as_ref())))
     }
 
@@ -113,6 +116,19 @@ impl<'a> CommitRef<'a> {
     }
 }
 
+/// Conversion
+impl CommitRef<'_> {
+    /// Copy all fields of this instance into a fully owned commit, consuming this instance.
+    pub fn into_owned(self) -> Commit {
+        self.into()
+    }
+
+    /// Copy all fields of this instance into a fully owned commit, internally cloning this instance.
+    pub fn to_owned(self) -> Commit {
+        self.clone().into()
+    }
+}
+
 impl Commit {
     /// Returns a convenient iterator over all extra headers.
     pub fn extra_headers(&self) -> ExtraHeaders<impl Iterator<Item = (&BStr, &BStr)>> {
@@ -134,16 +150,26 @@ where
     pub fn new(iter: I) -> Self {
         ExtraHeaders { inner: iter }
     }
+
     /// Find the _value_ of the _first_ header with the given `name`.
     pub fn find(mut self, name: &str) -> Option<&'a BStr> {
         self.inner
             .find_map(move |(k, v)| if k == name.as_bytes().as_bstr() { Some(v) } else { None })
     }
+
+    /// Find the entry index with the given name, or return `None` if unavailable.
+    pub fn find_pos(self, name: &str) -> Option<usize> {
+        self.inner
+            .enumerate()
+            .find_map(|(pos, (field, _value))| (field == name).then_some(pos))
+    }
+
     /// Return an iterator over all _values_ of headers with the given `name`.
     pub fn find_all(self, name: &'a str) -> impl Iterator<Item = &'a BStr> {
         self.inner
             .filter_map(move |(k, v)| if k == name.as_bytes().as_bstr() { Some(v) } else { None })
     }
+
     /// Return an iterator over all git mergetags.
     ///
     /// A merge tag is a tag object embedded within the respective header field of a commit, making
@@ -154,6 +180,6 @@ where
 
     /// Return the cryptographic signature provided by gpg/pgp verbatim.
     pub fn pgp_signature(self) -> Option<&'a BStr> {
-        self.find("gpgsig")
+        self.find(SIGNATURE_FIELD_NAME)
     }
 }

@@ -23,4 +23,9 @@ impl<'a> TagRef<'a> {
     pub fn target(&self) -> gix_hash::ObjectId {
         gix_hash::ObjectId::from_hex(self.target).expect("prior validation")
     }
+
+    /// Copy all data into a fully-owned instance.
+    pub fn into_owned(self) -> crate::Tag {
+        self.into()
+    }
 }

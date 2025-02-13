@@ -44,4 +44,9 @@ impl BlobRef<'_> {
     pub fn from_bytes(data: &[u8]) -> Result<BlobRef<'_>, Infallible> {
         Ok(BlobRef { data })
     }
+
+    /// Clone the data in this instance by allocating a new vector for a fully owned blob.
+    pub fn into_owned(self) -> Blob {
+        self.into()
+    }
 }

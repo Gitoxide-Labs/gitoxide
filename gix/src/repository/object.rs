@@ -342,7 +342,7 @@ impl crate::Repository {
     /// Create a new commit object with `message` referring to `tree` with `parents`, and point `reference`
     /// to it. The commit is written without message encoding field, which can be assumed to be UTF-8.
     /// `author` and `committer` fields are pre-set from the configuration, which can be altered
-    /// [temporarily][crate::Repository::config_snapshot_mut()] before the call if required.
+    /// [temporarily](crate::Repository::config_snapshot_mut()) before the call if required.
     ///
     /// `reference` will be created if it doesn't exist, and can be `"HEAD"` to automatically write-through to the symbolic reference
     /// that `HEAD` points to if it is not detached. For this reason, detached head states cannot be created unless the `HEAD` is detached
@@ -352,6 +352,11 @@ impl crate::Repository {
     /// If there is no parent, the `reference` is expected to not exist yet.
     ///
     /// The method fails immediately if a `reference` lock can't be acquired.
+    ///
+    /// ### Writing a commit without `reference` update
+    ///
+    /// If the reference shouldn't be updated, use [`Self::write_object()`] along with a newly created [`crate::objs::Object`] whose fields
+    /// can be fully defined.
     pub fn commit<Name, E>(
         &self,
         reference: Name,

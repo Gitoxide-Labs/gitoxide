@@ -1,12 +1,11 @@
-use gix_actor::SignatureRef;
-use gix_date::{time::Sign, Time};
-use gix_object::{bstr::ByteSlice, commit::message::body::TrailerRef, CommitRef};
-use smallvec::SmallVec;
-
 use crate::{
     commit::{LONG_MESSAGE, MERGE_TAG, SIGNATURE},
     fixture_name, linus_signature, signature,
 };
+use gix_actor::SignatureRef;
+use gix_date::{time::Sign, Time};
+use gix_object::{bstr::ByteSlice, commit::message::body::TrailerRef, CommitRef};
+use smallvec::SmallVec;
 
 #[test]
 fn invalid_timestsamp() {
@@ -354,7 +353,12 @@ fn newline_right_after_signature_multiline_header() -> crate::Result {
     let pgp_sig = crate::commit::OTHER_SIGNATURE.as_bstr();
     assert_eq!(commit.extra_headers[0].1.as_ref(), pgp_sig);
     assert_eq!(commit.extra_headers().pgp_signature(), Some(pgp_sig));
-    assert_eq!(commit.extra_headers().find("gpgsig"), Some(pgp_sig));
+    assert_eq!(
+        commit.extra_headers().find(gix_object::commit::SIGNATURE_FIELD_NAME),
+        Some(pgp_sig)
+    );
+    assert_eq!(commit.extra_headers().find_pos("gpgsig"), Some(0));
+    assert_eq!(commit.extra_headers().find_pos("something else"), None);
     assert!(commit.message.starts_with(b"Rollup"));
     Ok(())
 }

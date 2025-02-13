@@ -107,9 +107,21 @@ mod access {
 mod _impls {
     use std::cmp::Ordering;
 
+    use crate::{entry, Entry, State};
     use bstr::BStr;
+    use gix_object::tree::EntryKind;
 
-    use crate::{Entry, State};
+    impl From<EntryKind> for entry::Mode {
+        fn from(value: EntryKind) -> Self {
+            match value {
+                EntryKind::Tree => entry::Mode::DIR,
+                EntryKind::Blob => entry::Mode::FILE,
+                EntryKind::BlobExecutable => entry::Mode::FILE_EXECUTABLE,
+                EntryKind::Link => entry::Mode::SYMLINK,
+                EntryKind::Commit => entry::Mode::COMMIT,
+            }
+        }
+    }
 
     impl Entry {
         /// Compare one entry to another by their path, by comparing only their common path portion byte by byte, then resorting to

@@ -215,6 +215,18 @@ fn remove_entries() {
 }
 
 #[test]
+fn remove_entry_at_index() {
+    let mut file = Fixture::Loose("conflicting-file").open();
+
+    file.remove_entry_at_index(0);
+    assert_eq!(file.entries().len(), 2);
+    file.remove_entry_at_index(0);
+    assert_eq!(file.entries().len(), 1);
+    file.remove_entry_at_index(0);
+    assert_eq!(file.entries().len(), 0);
+}
+
+#[test]
 fn sort_entries() {
     let mut file = Fixture::Generated("v4_more_files_IEOT").open();
     assert!(file.verify_entries().is_ok());
